@@ -7,10 +7,10 @@ using Ubiq.Spawning;
 using Ubiq.XR;
 using UnityEngine;
 
-public class Motor : MonoBehaviour, IGraspable, IComponent, IVariable
+public class Servo : MonoBehaviour, IGraspable, IComponent, IVariable
 {
-    [Range(-1,1)]
-    public float Speed;
+    [Range(-180,180)]
+    public float Angle;
     /// <summary>
     /// // This property fulfils INetworkSpawnable. Spawnable objects need to 
     /// have their Ids set by the Object Spawner before they are registered, so
@@ -20,8 +20,8 @@ public class Motor : MonoBehaviour, IGraspable, IComponent, IVariable
 
     public float Value
     {
-        get => Speed; 
-        set => Speed = value;
+        get => Angle; 
+        set => Angle = value;
     }
     
 
@@ -45,6 +45,7 @@ public class Motor : MonoBehaviour, IGraspable, IComponent, IVariable
     {
         follow = new FollowHelper(transform);
         joint = GetComponent<HingeJoint>();
+        joint.useLimits = true;
     }
 
     void Start()
@@ -59,12 +60,23 @@ public class Motor : MonoBehaviour, IGraspable, IComponent, IVariable
         {
             SendUpdate();
         }
-        
         var motor = joint.motor;
-        motor.targetVelocity = Speed * 360f;
+        var limits = joint.limits;
+        if (Angle * 180f >= 0)
+        {
+            limits.max = Angle * 180f;
+            limits.min = 0;
+            motor.targetVelocity = 360f;
+        }
+        else
+        {
+            limits.max = 0;
+            limits.min = Angle * 180f;
+            motor.targetVelocity = -360f;
+        }
         joint.motor = motor;
-        
-        
+        joint.limits = limits;
+
     }
 
     public void Attach()
