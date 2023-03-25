@@ -6,7 +6,7 @@ using Ubiq.Spawning;
 using Ubiq.XR;
 using UnityEngine;
 
-public class Body : MonoBehaviour, IGraspable, IComponent
+public class Body : MonoBehaviour, IGraspable, IComponent,IUseable
 {
     /// <summary>
     /// // This property fulfils INetworkSpawnable. Spawnable objects need to 
@@ -18,6 +18,8 @@ public class Body : MonoBehaviour, IGraspable, IComponent
     private FollowHelper follow;
     private NetworkContext context;
     private ContraptionManager manager;
+    private GameObject Owner;
+    private bool IsOwn;
 
     public void Grasp(Hand controller)
     {
@@ -42,6 +44,10 @@ public class Body : MonoBehaviour, IGraspable, IComponent
 
     void Update()
     {
+        if (IsOwn)
+        {
+            Owner.transform.position = transform.position;
+        }
         if (follow.Update())
         {
             SendUpdate();
@@ -61,6 +67,7 @@ public class Body : MonoBehaviour, IGraspable, IComponent
             position = manager.GetLocalPosition(transform),
             rotation = manager.GetLocalRotation(transform),
         });
+        
     }
 
     public void ProcessMessage(ReferenceCountedSceneGraphMessage m)
@@ -68,5 +75,27 @@ public class Body : MonoBehaviour, IGraspable, IComponent
         var message = m.FromJson<Message>();
         transform.position = manager.GetWorldPosition(message.position);
         transform.rotation = manager.GetWorldRotation(message.rotation);
+    }
+
+    public void Use(Hand controller)
+    {
+        if (!IsOwn)
+        {
+            Owner = controller.transform.parent.gameObject;
+            IsOwn = true;
+        }
+        else
+        {
+            var buffpos = Owner.transform.position;
+            buffpos.y = 0;
+            Owner.transform.position = buffpos;
+            IsOwn = false;
+        }
+        
+    }
+
+    public void UnUse(Hand controller)
+    {
+        print("do nothing");
     }
 }
